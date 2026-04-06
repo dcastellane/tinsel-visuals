@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Gold Pipeline — From Darfur to Dubai</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #fafafa; font-family: 'DM Sans', sans-serif; }
+  .map-container { max-width: 100%; margin: 0; background: #fff; }
+  .map-header { padding: 16px 20px 12px; border-bottom: 1px solid #e5e2dd; background: #fff; }
+  .map-header h3 { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 900; margin-bottom: 2px; }
+  .map-header .sub { font-size: 11px; color: #999; }
+  #map { width: 100%; height: 520px; }
+  .map-legend { padding: 10px 20px; border-top: 1px solid #e5e2dd; display: flex; gap: 14px; flex-wrap: wrap; background: #fff; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: #666; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .legend-line { width: 16px; height: 2px; flex-shrink: 0; }
+  .leaflet-popup-content { font-family: 'DM Sans', sans-serif; font-size: 12px; line-height: 1.5; margin: 10px 14px; }
+  .leaflet-popup-content .pt { font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 900; margin-bottom: 2px; }
+  .leaflet-popup-content .ps { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 900; color: #b08d3a; margin: 2px 0; }
+  .leaflet-popup-content .pd { font-size: 11px; color: #666; }
+  .step-label { background: rgba(0,0,0,0.7); color: white; padding: 2px 6px; border-radius: 2px; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; border: none; box-shadow: none; }
+</style>
+</head>
+<body>
+<div class="map-container">
+  <div class="map-header">
+    <h3>The Gold Pipeline: 5 Steps to Invisibility</h3>
+    <div class="sub">Click each numbered step for details. Animated lines show documented gold flow routes.</div>
+  </div>
+  <div id="map"></div>
+  <div class="map-legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#d63031"></div> Mining Zone</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#b08d3a"></div> Refining Hub</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#4a6fa5"></div> Transit Point</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#666"></div> Global Market</div>
+    <div class="legend-item"><div class="legend-line" style="background:#d63031"></div> Primary Route</div>
+    <div class="legend-item"><div class="legend-line" style="background:#b08d3a;opacity:0.5"></div> Re-export Route</div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+var map = L.map('map', { center: [18, 38], zoom: 4, scrollWheelZoom: false, zoomControl: true });
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: 'OSM/CARTO', maxZoom: 10 }).addTo(map);
+
+function mk(c, s) {
+  return L.divIcon({ className: '', html: '<div style="width:'+s+'px;height:'+s+'px;border-radius:50%;background:'+c+';border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4)"></div>', iconSize: [s, s], iconAnchor: [s/2, s/2] });
+}
+
+function stepIcon(num, c) {
+  return L.divIcon({
+    className: '',
+    html: '<div style="position:relative;"><div style="width:28px;height:28px;border-radius:50%;background:'+c+';border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;font-family:DM Sans,sans-serif;font-size:12px;font-weight:700;color:white;">'+num+'</div></div>',
+    iconSize: [28, 28], iconAnchor: [14, 14]
+  });
+}
+
+function pp(t, s, d) { return '<div class="pt">'+t+'</div>'+(s?'<div class="ps">'+s+'</div>':'')+'<div class="pd">'+d+'</div>'; }
+
+// Step 1: Mining zones
+L.marker([14.8, 25.0], {icon: stepIcon('1', '#d63031')}).bindPopup(pp('Step 1: Artisanal Extraction', '~70 tonnes/yr', "RSF-controlled mines in Darfur. Forced labor, mercury amalgamation. Gold bought at 'conflict discount' — far below $5,100/oz market rate. Miners absorb mercury through skin and lungs. Irreversible neurological damage.")).addTo(map);
+L.marker([13.5, 24.5], {icon: mk('#d63031', 10)}).bindPopup(pp('Central Darfur Mining Zone', '', 'Secondary RSF-controlled extraction sites. Civilians displaced to clear mining areas.')).addTo(map);
+L.marker([11.5, 29.5], {icon: mk('#d63031', 10)}).bindPopup(pp('South Kordofan', '', 'Active conflict zone. Gold and mineral extraction under armed group control.')).addTo(map);
+
+// Displacement zones
+[{lat:13.6,lng:22.4},{lat:15.4,lng:32.5},{lat:12,lng:24.9},{lat:13,lng:33.3}].forEach(function(d) {
+  L.circle([d.lat, d.lng], {radius: 100000, color: 'rgba(214,48,49,0.25)', fillColor: 'rgba(214,48,49,0.08)', fillOpacity: 0.3, weight: 1}).addTo(map);
+});
+
+// Step 2: Consolidation & Transport
+L.marker([15.6, 32.5], {icon: stepIcon('2', '#4a6fa5')}).bindPopup(pp('Step 2: Consolidation & Charter Flights', '', 'RSF-affiliated buyers consolidate gold from multiple mines. Charter flights from Khartoum and Darfur airfields. Minimal paperwork — generic declarations that omit mine, organization, and extraction conditions.')).addTo(map);
+
+// Step 3: Dubai Refineries
+L.marker([25.2, 55.3], {icon: stepIcon('3', '#b08d3a')}).bindPopup(pp('Step 3: Dubai Refineries', '40% of world gold processed here', '29 tonnes imported directly from Sudan in 2024. ISO-certified refineries process raw gold into 99.99% pure bullion. Free trade zones provide regulatory distance. After refining, no chemical or isotopic test can determine origin. The violence becomes invisible.')).addTo(map);
+
+// Step 4: Transit/Re-documentation
+L.marker([12.1, 15.0], {icon: stepIcon('4a', '#4a6fa5')}).bindPopup(pp("Step 4: Re-documentation", '', "N'Djamena, Chad — Gold repackaged with clean paperwork. Origin documents fabricated.")).addTo(map);
+L.marker([4.4, 18.6], {icon: stepIcon('4b', '#4a6fa5')}).bindPopup(pp('Step 4: Re-documentation', '', 'Bangui, CAR — Additional transit hub. Gold enters with Sudanese documentation, leaves with clean papers.')).addTo(map);
+
+// Step 5: Global Markets
+L.marker([51.5, -0.1], {icon: stepIcon('5', '#666')}).bindPopup(pp('Step 5: Global Markets', '$5,100/oz', 'London — One of the world\'s largest gold trading centers. Conflict gold arrives as sovereign reserves, jewelry, electronics.')).addTo(map);
+L.marker([47.4, 8.5], {icon: mk('#666', 8)}).bindPopup(pp('Zurich', '', 'Swiss refineries and banking. Major gold storage hub.')).addTo(map);
+L.marker([1.3, 103.8], {icon: mk('#666', 8)}).bindPopup(pp('Singapore', '', 'Asian gold trading hub.')).addTo(map);
+L.marker([22.3, 114.2], {icon: mk('#666', 8)}).bindPopup(pp('Hong Kong', '', 'Gateway to Chinese gold market.')).addTo(map);
+
+// Russia/Africa Corps
+L.marker([12.6, -8.0], {icon: mk('#8B0000', 8)}).bindPopup(pp('Mali — Africa Corps', '$2.5B linked', 'Russian military presence. Security-for-concessions model.')).addTo(map);
+L.marker([12.3, -1.5], {icon: mk('#8B0000', 8)}).bindPopup(pp('Burkina Faso — Africa Corps', '', 'Mining concessions since 2022.')).addTo(map);
+L.marker([13.5, 2.1], {icon: mk('#8B0000', 8)}).bindPopup(pp('Niger — Africa Corps', '', 'Russian mineral extraction agreements.')).addTo(map);
+
+// Routes (animated)
+// Primary: Darfur → Khartoum → Dubai
+L.polyline([[14.8, 25.0], [15.6, 32.5]], {color: '#d63031', weight: 3, dashArray: '10,6', className: 'flow-route'}).addTo(map);
+L.polyline([[15.6, 32.5], [25.2, 55.3]], {color: '#d63031', weight: 3, dashArray: '10,6', className: 'flow-route'}).addTo(map);
+
+// Transit: Darfur → Chad → CAR → Dubai
+L.polyline([[14.8, 25.0], [12.1, 15.0]], {color: '#d63031', weight: 2, dashArray: '6,4', opacity: 0.6}).addTo(map);
+L.polyline([[12.1, 15.0], [4.4, 18.6]], {color: '#d63031', weight: 2, dashArray: '6,4', opacity: 0.6}).addTo(map);
+L.polyline([[4.4, 18.6], [25.2, 55.3]], {color: '#d63031', weight: 1.5, dashArray: '5,4', opacity: 0.4}).addTo(map);
+
+// Dubai → Global markets
+([[[25.2,55.3],[51.5,-0.1]],[[25.2,55.3],[47.4,8.5]],[[25.2,55.3],[1.3,103.8]],[[25.2,55.3],[22.3,114.2]]]).forEach(function(r) {
+  L.polyline(r, {color: '#b08d3a', weight: 1.5, dashArray: '5,4', opacity: 0.35}).addTo(map);
+});
+
+// Russia routes
+([[[12.6,-8],[14.8,25]],[[12.3,-1.5],[14.8,25]],[[13.5,2.1],[14.8,25]]]).forEach(function(r) {
+  L.polyline(r, {color: '#8B0000', weight: 1, dashArray: '4,4', opacity: 0.3}).addTo(map);
+});
+
+// Animate the dash offset for primary routes
+var style = document.createElement('style');
+style.textContent = '.flow-route { animation: dashFlow 2s linear infinite; } @keyframes dashFlow { to { stroke-dashoffset: -16; } }';
+document.head.appendChild(style);
+</script>
+</body>
+</html>
