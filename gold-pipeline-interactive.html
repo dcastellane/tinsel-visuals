@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Gold Pipeline — Interactive Visualization</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #fafafa; --surface: #fff; --text: #1a1a1a; --muted: #666; --dim: #999;
+    --red: #d63031; --gold: #b08d3a; --blue: #4a6fa5; --border: #e5e2dd;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; }
+
+  .header { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .header h2 { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 900; }
+  .header .sub { font-size: 11px; color: var(--dim); margin-top: 2px; }
+
+  .tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .tab { padding: 10px 20px; font-size: 12px; font-weight: 600; color: var(--dim); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+  .panel { display: none; padding: 24px; background: var(--surface); }
+  .panel.active { display: block; }
+
+  /* === PANEL 1: Pipeline Flow === */
+  .flow-step { display: flex; align-items: flex-start; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border); position: relative; }
+  .flow-step:last-child { border-bottom: none; }
+  .flow-num { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 900; color: white; flex-shrink: 0; }
+  .flow-content { flex: 1; }
+  .flow-title { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 900; margin-bottom: 2px; }
+  .flow-loc { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); font-weight: 600; }
+  .flow-desc { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+  .flow-stat { display: inline-block; margin-top: 6px; padding: 4px 10px; background: #f2f0ec; border-left: 2px solid var(--gold); font-size: 11px; }
+  .flow-stat strong { font-family: 'Playfair Display', serif; color: var(--gold); font-size: 14px; }
+  .flow-arrow { text-align: center; color: var(--red); font-size: 20px; padding: 4px 0; }
+  .flow-alert { background: rgba(214,48,49,0.04); border: 1px solid rgba(214,48,49,0.12); border-radius: 6px; padding: 16px; margin: 12px 0; text-align: center; }
+  .flow-alert p { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 900; color: var(--red); }
+  .flow-alert .detail { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* === PANEL 2: Gold Economics === */
+  .econ-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .econ-card { padding: 20px; border-radius: 6px; text-align: center; }
+  .econ-card.gold-bg { background: rgba(176,141,58,0.06); border: 1px solid rgba(176,141,58,0.15); }
+  .econ-card.red-bg { background: rgba(214,48,49,0.04); border: 1px solid rgba(214,48,49,0.12); }
+  .econ-num { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 900; line-height: 1; }
+  .econ-num.gold { color: var(--gold); }
+  .econ-num.red { color: var(--red); }
+  .econ-label { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+
+  /* Value chain bar */
+  .value-chain { margin-top: 20px; }
+  .vc-label { font-size: 11px; color: var(--dim); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; }
+  .vc-bar { height: 40px; background: #f2f0ec; border-radius: 4px; overflow: hidden; display: flex; position: relative; }
+  .vc-segment { display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: white; }
+  .vc-labels { display: flex; margin-top: 4px; }
+  .vc-labels span { font-size: 10px; color: var(--dim); }
+
+  /* === PANEL 3: Mercury Impact === */
+  .mercury-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .mercury-card { padding: 16px; border-radius: 6px; background: #f2f0ec; border-left: 3px solid var(--red); }
+  .mercury-card h4 { font-size: 13px; font-weight: 700; color: var(--red); margin-bottom: 6px; }
+  .mercury-card p { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .mercury-stat { text-align: center; padding: 20px; margin-top: 16px; border-top: 1px solid var(--border); }
+  .mercury-stat .big { font-family: 'Playfair Display', serif; font-size: 48px; font-weight: 900; color: var(--red); }
+  .mercury-stat .context { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* === PANEL 4: Russia Network === */
+  .russia-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .russia-row:last-child { border-bottom: none; }
+  .russia-entity { font-size: 13px; font-weight: 600; }
+  .russia-desc { font-size: 11px; color: var(--dim); }
+  .russia-amount { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 900; color: var(--red); }
+  .russia-bar-track { height: 12px; background: #f2f0ec; border-radius: 6px; overflow: hidden; margin: 16px 0 6px; }
+  .russia-bar { height: 100%; border-radius: 6px; background: var(--red); }
+  .russia-bar-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--dim); }
+
+  .footer { padding: 12px 24px; border-top: 1px solid var(--border); text-align: center; background: var(--surface); }
+  .footer span { font-size: 9px; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; }
+
+  @media (max-width: 600px) {
+    .econ-grid { grid-template-columns: 1fr; }
+    .mercury-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div>
+  <div class="header">
+    <h2>The Gold Pipeline</h2>
+    <div class="sub">Interactive visualization — explore the supply chain, economics, health impact, and global network</div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="showPanel(0)">The Pipeline</div>
+    <div class="tab" onclick="showPanel(1)">Gold Economics</div>
+    <div class="tab" onclick="showPanel(2)">Mercury</div>
+    <div class="tab" onclick="showPanel(3)">Russia Network</div>
+  </div>
+
+  <!-- PANEL 1: Pipeline Flow -->
+  <div class="panel active" id="panel-0">
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--red);">1</div>
+      <div class="flow-content">
+        <div class="flow-loc">Darfur &amp; South Kordofan, Sudan</div>
+        <div class="flow-title">Artisanal Extraction</div>
+        <div class="flow-desc">RSF-controlled mines. Forced labor including children. Mercury amalgamation with bare hands. Gold bought at "conflict discount" — far below market rate.</div>
+        <div class="flow-stat"><strong>~70 tonnes</strong> / year (2025)</div>
+      </div>
+    </div>
+    <div class="flow-arrow">&#8595;</div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--red);opacity:0.8;">2</div>
+      <div class="flow-content">
+        <div class="flow-loc">Charter Flights</div>
+        <div class="flow-title">Consolidation &amp; Transport</div>
+        <div class="flow-desc">RSF-affiliated buyers consolidate from multiple mines. Minimal paperwork — generic declarations omitting mine, organization, and extraction conditions. Direct flights to Dubai.</div>
+      </div>
+    </div>
+    <div class="flow-arrow">&#8595;</div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--gold);">3</div>
+      <div class="flow-content">
+        <div class="flow-loc">Dubai, UAE</div>
+        <div class="flow-title">Refining — The Invisibility Point</div>
+        <div class="flow-desc">ISO-certified refineries process raw gold into 99.99% pure bullion. Chemically, isotopically, and legally indistinguishable from legitimate gold.</div>
+        <div class="flow-stat"><strong>40%</strong> of world's gold processed here</div>
+        <div class="flow-stat" style="margin-left:8px;"><strong>29 tonnes</strong> from Sudan (2024)</div>
+      </div>
+    </div>
+    <div class="flow-alert">
+      <p>&#128683; Origin becomes permanently invisible</p>
+      <div class="detail">No chemical test. No isotopic analysis. No legal framework can distinguish conflict gold from legitimate gold.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:var(--blue);">4</div>
+      <div class="flow-content">
+        <div class="flow-loc">Chad, CAR, East Africa</div>
+        <div class="flow-title">Re-documentation</div>
+        <div class="flow-desc">Gold repackaged with fabricated clean paperwork through intermediary countries. Paper trail manufactured; gold is real.</div>
+      </div>
+    </div>
+    <div class="flow-arrow">&#8595;</div>
+    <div class="flow-step">
+      <div class="flow-num" style="background:#666;">5</div>
+      <div class="flow-content">
+        <div class="flow-loc">Global Markets</div>
+        <div class="flow-title">End Use</div>
+        <div class="flow-desc">Sovereign reserves, electronics, jewelry, investment instruments. The violence that funded extraction is invisible to every end consumer.</div>
+        <div class="flow-stat"><strong>$5,100</strong> / oz (March 2026)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL 2: Gold Economics -->
+  <div class="panel" id="panel-1">
+    <div class="econ-grid">
+      <div class="econ-card gold-bg">
+        <div class="econ-num gold">70</div>
+        <div class="econ-label">Tonnes of gold extracted from Sudan annually (2025)</div>
+      </div>
+      <div class="econ-card gold-bg">
+        <div class="econ-num gold">$5,100</div>
+        <div class="econ-label">Per ounce — near all-time highs (March 2026)</div>
+      </div>
+      <div class="econ-card gold-bg">
+        <div class="econ-num gold">~$11B</div>
+        <div class="econ-label">Annual value of Sudan's gold at current prices</div>
+      </div>
+      <div class="econ-card red-bg">
+        <div class="econ-num red">0%</div>
+        <div class="econ-label">Returns to Sudan's civilian population</div>
+      </div>
+    </div>
+
+    <div class="value-chain">
+      <div class="vc-label">Where the value goes</div>
+      <div class="vc-bar">
+        <div class="vc-segment" style="width:35%;background:var(--red);">RSF</div>
+        <div class="vc-segment" style="width:25%;background:var(--gold);">UAE Refiners</div>
+        <div class="vc-segment" style="width:15%;background:var(--blue);">Traders</div>
+        <div class="vc-segment" style="width:15%;background:#888;">Finance</div>
+        <div class="vc-segment" style="width:10%;background:#bbb;">Transit</div>
+      </div>
+      <div class="vc-labels">
+        <span style="flex:1;">Armed groups capture the largest share</span>
+        <span style="text-align:right;">Downstream actors capture the rest</span>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:24px;padding-top:16px;border-top:1px solid var(--border);">
+      <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:900;">The war has a <span style="color:var(--red);">business model</span>.</div>
+      <div style="font-size:11px;color:var(--dim);margin-top:4px;">As long as conflict gold generates $11B annually and no actor faces consequences, no ceasefire will hold.</div>
+    </div>
+  </div>
+
+  <!-- PANEL 3: Mercury Health Impact -->
+  <div class="panel" id="panel-2">
+    <div style="font-size:12px;color:var(--dim);margin-bottom:16px;">The hidden cost of artisanal gold extraction in Darfur</div>
+    <div class="mercury-grid">
+      <div class="mercury-card">
+        <h4>Neurological Damage</h4>
+        <p>Tremors, cognitive decline, memory loss. Workers in their 20s show neurological profiles of people twice their age. Irreversible.</p>
+      </div>
+      <div class="mercury-card">
+        <h4>Kidney &amp; Organ Failure</h4>
+        <p>Chronic kidney damage, reproductive harm. Mercury accumulates in organs and is never fully eliminated from the body.</p>
+      </div>
+      <div class="mercury-card">
+        <h4>Water Contamination</h4>
+        <p>Mercury drains into drinking water, irrigation, and fishing grounds. Entire communities downstream are poisoned through food and water.</p>
+      </div>
+      <div class="mercury-card">
+        <h4>Children at Highest Risk</h4>
+        <p>Developing brains are most vulnerable. Permanent cognitive damage from vapor inhalation. Many children work in mines directly.</p>
+      </div>
+    </div>
+    <div class="mercury-stat">
+      <div class="big">0</div>
+      <div class="context">Protections, regulations, or medical care available to miners in RSF-controlled zones</div>
+    </div>
+  </div>
+
+  <!-- PANEL 4: Russia / Global Network -->
+  <div class="panel" id="panel-3">
+    <div style="font-size:12px;color:var(--dim);margin-bottom:16px;">Military support for mining concessions across the Sahel</div>
+
+    <div class="russia-row">
+      <div>
+        <div class="russia-entity">Africa Corps (ex-Wagner)</div>
+        <div class="russia-desc">Mali, Burkina Faso, Niger, Sudan — security-for-concessions model</div>
+      </div>
+      <div class="russia-amount">$2.5B</div>
+    </div>
+    <div class="russia-row">
+      <div>
+        <div class="russia-entity">Chinese Belt &amp; Road Mining Loans</div>
+        <div class="russia-desc">Policy banks financing extraction infrastructure (H1 2025)</div>
+      </div>
+      <div class="russia-amount">$24.9B</div>
+    </div>
+    <div class="russia-row">
+      <div>
+        <div class="russia-entity">UAE Gold Imports from Sudan</div>
+        <div class="russia-desc">Direct imports, no origin verification required</div>
+      </div>
+      <div class="russia-amount">29 tonnes</div>
+    </div>
+
+    <div style="margin-top:20px;">
+      <div class="vc-label">Scale comparison: funding sources</div>
+      <div style="margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span>Russia (Africa Corps gold)</span><span style="color:var(--red);">$2.5B</span></div>
+        <div class="russia-bar-track"><div class="russia-bar" style="width:10%;"></div></div>
+      </div>
+      <div style="margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span>Sudan annual gold output</span><span style="color:var(--gold);">$11B</span></div>
+        <div class="russia-bar-track"><div class="russia-bar" style="width:44%;background:var(--gold);"></div></div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span>China Belt &amp; Road mining loans</span><span style="color:var(--blue);">$24.9B</span></div>
+        <div class="russia-bar-track"><div class="russia-bar" style="width:100%;background:var(--blue);"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer"><span>Blood Minerals of the Green Age — Part 2 &bull; Tinsel News</span></div>
+</div>
+
+<script>
+function showPanel(index) {
+  document.querySelectorAll('.panel').forEach((p, i) => p.classList.toggle('active', i === index));
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === index));
+}
+</script>
+</body>
+</html>
